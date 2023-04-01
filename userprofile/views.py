@@ -39,10 +39,7 @@ class ProfileEditView(UpdateView):
         user.first_name = request.POST.get('first_name')
         user.last_name = request.POST.get('last_name')
         user.about = request.POST.get('about')
-        if request.POST.get('gender') == "male":
-            user.gender = "male"
-        else:
-            user.gender = "female"
+        user.gender = "male" if request.POST.get('gender') == "male" else "female"
         user.save()
         profile = user.profile
         profile.country = request.POST.get('country')

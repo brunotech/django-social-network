@@ -44,15 +44,16 @@ class ChatConsumer(WebsocketConsumer):
             'message': self.message_to_json(message)
         }
         channel_layer = get_channel_layer()
-        channel = "notifications_{}".format(friend_user.username)
+        channel = f"notifications_{friend_user.username}"
         async_to_sync(channel_layer.group_send)(
-            channel, {
-                "type": "notify",  # method name
+            channel,
+            {
+                "type": "notify",
                 "notification": {
                     "title": "Message",
-                    "body": author_user.username + " messaged you"
-                }
-            }
+                    "body": f"{author_user.username} messaged you",
+                },
+            },
         )
         return self.send_chat_message(content)
 
@@ -72,10 +73,7 @@ class ChatConsumer(WebsocketConsumer):
         return self.send_chat_message(content)
 
     def messages_to_json(self, messages):
-        result = []
-        for message in messages:
-            result.append(self.message_to_json(message))
-        return result
+        return [self.message_to_json(message) for message in messages]
 
     @staticmethod
     def message_to_json(message):
@@ -106,7 +104,7 @@ class ChatConsumer(WebsocketConsumer):
                 Q(author=author_user, friend=friend_user) | Q(author=friend_user, friend=author_user))[0]
         else:
             self.room = Room.objects.create(author=author_user, friend=friend_user)
-        self.room_group_name = 'chat_%s' % str(self.room.id)
+        self.room_group_name = f'chat_{str(self.room.id)}'
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name,
             self.channel_name

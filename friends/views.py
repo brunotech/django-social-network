@@ -18,8 +18,11 @@ class FindFriendsListView(ListView):
     def get_queryset(self):
         current_user_friends = self.request.user.friends.values('id')
         sent_request = list(Friend.objects.filter(user=self.request.user).values_list('friend_id', flat=True))
-        users = User.objects.exclude(id__in=current_user_friends).exclude(id__in=sent_request).exclude(id=self.request.user.id)
-        return users
+        return (
+            User.objects.exclude(id__in=current_user_friends)
+            .exclude(id__in=sent_request)
+            .exclude(id=self.request.user.id)
+        )
 
 
 def send_request(request, username=None):
@@ -28,7 +31,7 @@ def send_request(request, username=None):
         friend = Friend.objects.create(user=request.user, friend=friend_user)
         notification = CustomNotification.objects.create(type="friend", recipient=friend_user, actor=request.user, verb="sent you friend request")
         channel_layer = get_channel_layer()
-        channel = "notifications_{}".format(friend_user.username)
+        channel = f"notifications_{friend_user.username}"
         async_to_sync(channel_layer.group_send)(
             channel, {
                 "type": "notify",  # method name
@@ -41,8 +44,6 @@ def send_request(request, username=None):
             'message': "Request sent.",
         }
         return JsonResponse(data)
-    else:
-        pass
 
 
 def accept_request(request, friend=None):

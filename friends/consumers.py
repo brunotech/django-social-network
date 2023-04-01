@@ -27,10 +27,10 @@ class FriendRequestConsumer(AsyncJsonWebsocketConsumer):
         self.send_json(content)
 
     def notifications_to_json(self, notifications):
-        result = []
-        for notification in notifications:
-            result.append(self.notification_to_json(notification))
-        return result
+        return [
+            self.notification_to_json(notification)
+            for notification in notifications
+        ]
 
     @staticmethod
     def notification_to_json(notification):
@@ -43,13 +43,13 @@ class FriendRequestConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):
         user = self.scope['user']
-        grp = 'notifications_{}'.format(user.username)
+        grp = f'notifications_{user.username}'
         await self.accept()
         await self.channel_layer.group_add(grp, self.channel_name)
 
     async def disconnect(self, close_code):
         user = self.scope['user']
-        grp = 'notifications_{}'.format(user.username)
+        grp = f'notifications_{user.username}'
         await self.channel_layer.group_discard(grp, self.channel_name)
 
     async def notify(self, event):

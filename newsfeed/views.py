@@ -32,10 +32,7 @@ class PostCreateView(CreateView):
     def post(self, *args, **kwargs):
         form = self.get_form()
         self.object = None
-        if form.is_valid():
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
+        return self.form_valid(form) if form.is_valid() else self.form_invalid(form)
 
 
 def create_comment(request, post_id=None):
@@ -44,7 +41,7 @@ def create_comment(request, post_id=None):
         comment = post.comments.create(user=request.user, content=request.POST.get('content'))
         notification = CustomNotification.objects.create(type="comment", recipient=post.user, actor=request.user, verb="commented on your post")
         channel_layer = get_channel_layer()
-        channel = "comment_like_notifications_{}".format(post.user.username)
+        channel = f"comment_like_notifications_{post.user.username}"
         print(json.dumps(NotificationSerializer(notification).data))
         async_to_sync(channel_layer.group_send)(
             channel, {
@@ -53,6 +50,4 @@ def create_comment(request, post_id=None):
                 "notification": json.dumps(NotificationSerializer(notification).data)
             }
         )
-        return redirect(reverse_lazy('core:home'))
-    else:
-        return redirect(reverse_lazy('core:home'))
+    return redirect(reverse_lazy('core:home'))
